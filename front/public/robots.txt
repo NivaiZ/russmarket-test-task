@@ -1,0 +1,4 @@
+# Страницы закрыты через meta robots noindex.
+# Disallow здесь нельзя: робот не увидит noindex и URL может остаться в выдаче.
+User-agent: *
+Disallow:

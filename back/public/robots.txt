@@ -1,0 +1,5 @@
+# Страницы закрыты заголовком X-Robots-Tag: noindex.
+# Disallow здесь нельзя: робот не увидит noindex и URL может остаться в выдаче.
+User-agent: *
+Disallow:
+
