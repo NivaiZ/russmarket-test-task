@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,12 +19,12 @@ class ExampleTest extends TestCase
         $response->assertOk()->assertHeader('X-Robots-Tag', 'noindex');
     }
 
-    public function test_browser_password_is_checked_on_the_backend(): void
+    public function test_browser_password_is_checked_against_env_without_bcrypt(): void
     {
-        $this->app->detectEnvironment(fn () => 'production');
-        User::factory()->create([
-            'email' => 'ilya-94',
-            'password' => 'secret-password',
+        config([
+            'auth.basic_disabled' => false,
+            'auth.basic_email' => 'ilya-94',
+            'auth.basic_password' => 'secret-password',
         ]);
 
         $this->get('/')->assertUnauthorized();

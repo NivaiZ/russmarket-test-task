@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { shiftHours, toIso, weekdayLabel } from '@/shared/lib'
 import { plusCellIcon } from '@/shared/ui'
 import type { Employee, Shift } from '../model/types'
@@ -20,17 +21,39 @@ const emit = defineEmits<{
   'drag-over': [key: string]
 }>()
 
-function cellKey(employeeId: number, date: string): string {
-  return `${employeeId}|${date}`
-}
-
 function safeAvatar(avatar: string): string {
   return /^\/avatars\/[A-Za-z0-9._-]+$/.test(avatar) ? avatar : ''
 }
 
-function shiftAt(employeeId: number, date: Date): Shift | undefined {
-  const iso = toIso(date)
-  return props.shifts.find((shift) => shift.employee_id === employeeId && shift.on_date === iso)
+const boardIndex = computed(() => {
+  const byCell = new Map<string, Shift>()
+  const coverage = new Map<string, number>()
+  for (const shift of props.shifts) {
+    byCell.set(`${shift.employee_id}|${shift.on_date}`, shift)
+    coverage.set(shift.on_date, (coverage.get(shift.on_date) ?? 0) + 1)
+  }
+
+  return {
+    byCell,
+    coverage,
+    selected: new Set(props.selected),
+  }
+})
+
+function cellsFor(employee: Employee) {
+  const index = boardIndex.value
+  return props.days.map((day) => {
+    const iso = toIso(day)
+    const key = `${employee.id}|${iso}`
+    return {
+      day,
+      iso,
+      key,
+      shift: index.byCell.get(key),
+      selected: index.selected.has(key),
+      over: props.dragOverKey === key,
+    }
+  })
 }
 
 function dayText(day: Date): string {
@@ -38,8 +61,7 @@ function dayText(day: Date): string {
 }
 
 function coverageCount(day: Date): number {
-  const iso = toIso(day)
-  return props.shifts.filter((shift) => shift.on_date === iso).length
+  return boardIndex.value.coverage.get(toIso(day)) ?? 0
 }
 
 function hourLabel(value: string): string {
@@ -170,50 +192,41 @@ function onDrop(event: DragEvent, employeeId: number, date: Date): void {
             </span>
           </th>
           <td
-            v-for="day in days"
-            :key="cellKey(employee.id, toIso(day))"
+            v-for="cell in cellsFor(employee)"
+            :key="cell.key"
             class="cell"
-            :class="{
-              selected: selected.includes(cellKey(employee.id, toIso(day))),
-              over: dragOverKey === cellKey(employee.id, toIso(day)),
-            }"
-            @dragover.prevent="emit('drag-over', cellKey(employee.id, toIso(day)))"
-            @dragleave="onDragLeave($event, cellKey(employee.id, toIso(day)))"
-            @drop="onDrop($event, employee.id, day)"
+            :class="{ selected: cell.selected, over: cell.over }"
+            @dragover.prevent="emit('drag-over', cell.key)"
+            @dragleave="onDragLeave($event, cell.key)"
+            @drop="onDrop($event, employee.id, cell.day)"
           >
             <button
-              v-if="shiftAt(employee.id, day)"
+              v-if="cell.shift"
               class="chip"
               :class="{ month: mode === 'month' }"
               type="button"
               draggable="true"
-              :style="chipStyle(shiftAt(employee.id, day)!)"
-              :aria-label="`Смена ${employee.name}, ${shiftAt(employee.id, day)?.starts_at}–${shiftAt(employee.id, day)?.ends_at}`"
-              @click="emit('open-shift', shiftAt(employee.id, day)!)"
-              @dragstart="onDragStart($event, `shift:${shiftAt(employee.id, day)?.id}`)"
+              :style="chipStyle(cell.shift)"
+              :aria-label="`Смена ${employee.name}, ${cell.shift.starts_at}–${cell.shift.ends_at}`"
+              @click="emit('open-shift', cell.shift)"
+              @dragstart="onDragStart($event, `shift:${cell.shift.id}`)"
             >
               <span v-if="mode === 'week'" class="chip-time">
-                {{ rangeLabel(shiftAt(employee.id, day)!.starts_at, shiftAt(employee.id, day)!.ends_at) }}
+                {{ rangeLabel(cell.shift.starts_at, cell.shift.ends_at) }}
               </span>
               <span class="chip-hours">
-                {{ shiftHours(shiftAt(employee.id, day)!.starts_at, shiftAt(employee.id, day)!.ends_at) }}
+                {{ shiftHours(cell.shift.starts_at, cell.shift.ends_at) }}
               </span>
             </button>
             <button
               v-else
               class="empty"
               type="button"
-              :aria-pressed="selected.includes(cellKey(employee.id, toIso(day)))"
-              :aria-label="`Выбрать ячейку, ${employee.name}, ${dayText(day)}`"
-              @click="emit('toggle-cell', employee.id, toIso(day))"
+              :aria-pressed="cell.selected"
+              :aria-label="`Выбрать ячейку, ${employee.name}, ${dayText(cell.day)}`"
+              @click="emit('toggle-cell', employee.id, cell.iso)"
             >
-              <img
-                v-if="selected.includes(cellKey(employee.id, toIso(day)))"
-                :src="plusCellIcon"
-                alt=""
-                width="20"
-                height="20"
-              />
+              <img v-if="cell.selected" :src="plusCellIcon" alt="" width="20" height="20" />
             </button>
           </td>
         </tr>

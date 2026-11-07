@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 #[Fillable(['name', 'address', 'slug', 'status', 'progress', 'employees_count', 'on_date'])]
@@ -88,12 +89,18 @@ class Schedule extends Model
     public function refreshProgress(): void
     {
         $employees = Employee::query()->count();
-        $days = $this->on_date->daysInMonth;
-        $start = $this->on_date->copy()->startOfMonth()->toDateString();
-        $end = $this->on_date->copy()->endOfMonth()->toDateString();
-        $filled = $this->shifts()->whereBetween('on_date', [$start, $end])->count();
-        $total = max($employees * $days, 1);
+        $months = [
+            $this->on_date->format('Y-m') => $this->on_date->daysInMonth,
+        ];
+        $filled = 0;
 
+        foreach ($this->shifts()->pluck('on_date') as $onDate) {
+            $filled++;
+            $month = Carbon::parse($onDate)->startOfMonth();
+            $months[$month->format('Y-m')] = $month->daysInMonth;
+        }
+
+        $total = max($employees * array_sum($months), 1);
         $this->employees_count = $employees;
         $this->progress = (int) round($filled / $total * 100);
         $this->save();

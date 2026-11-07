@@ -1,1 +1,1 @@
-export { request } from './client'
+export { ApiError, isAbortError, request } from './client'

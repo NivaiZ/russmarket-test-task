@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Employee;
 use App\Models\Schedule;
 use App\Models\ShiftTemplate;
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -20,9 +19,9 @@ class DatabaseSeeder extends Seeder
     {
         if (Schedule::query()->doesntExist()) {
             $points = [
-                ['status' => 'published', 'progress' => 91, 'on_date' => '2026-08-30'],
-                ['status' => 'draft', 'progress' => 82, 'on_date' => '2026-08-31'],
-                ['status' => 'draft', 'progress' => 48, 'on_date' => '2026-08-31'],
+                ['status' => 'published', 'progress' => 0, 'on_date' => '2026-08-30'],
+                ['status' => 'draft', 'progress' => 0, 'on_date' => '2026-08-31'],
+                ['status' => 'draft', 'progress' => 0, 'on_date' => '2026-08-31'],
             ];
             foreach ($points as $point) {
                 Schedule::query()->create([
@@ -67,14 +66,5 @@ class DatabaseSeeder extends Seeder
         }
 
         Schedule::query()->update(['employees_count' => Employee::query()->count()]);
-
-        $email = config('auth.basic_email');
-        $password = config('auth.basic_password');
-        if (is_string($email) && $email !== '' && is_string($password) && $password !== '') {
-            User::query()->updateOrCreate(
-                ['email' => $email],
-                ['name' => 'ilya-94', 'password' => $password],
-            );
-        }
     }
 }

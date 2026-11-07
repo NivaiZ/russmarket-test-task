@@ -25,7 +25,7 @@ class ScheduleController extends Controller
             $query->where('status', $status);
         }
 
-        $schedules = $query->limit(self::LIST_LIMIT)->get();
+        $schedules = $query->get();
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
@@ -35,6 +35,8 @@ class ScheduleController extends Controller
                 fn (Schedule $schedule) => str_contains(mb_strtolower($schedule->name), $needle),
             )->values();
         }
+
+        $schedules = $schedules->take(self::LIST_LIMIT)->values();
 
         return response()->json([
             'data' => $schedules->map(fn (Schedule $schedule) => $this->payload($schedule))->all(),

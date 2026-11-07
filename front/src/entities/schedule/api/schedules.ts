@@ -9,8 +9,6 @@ type ScheduleListResponse = {
   data: Schedule[]
 }
 
-const errorMessage = 'Не удалось получить графики'
-
 export function fetchSchedules(search: string, status: ScheduleStatus | ''): Promise<Schedule[]> {
   const params = new URLSearchParams()
   if (search.trim() !== '') {
@@ -23,14 +21,14 @@ export function fetchSchedules(search: string, status: ScheduleStatus | ''): Pro
 
   return request<ScheduleListResponse>(
     `/api/schedules${query ? `?${query}` : ''}`,
-    errorMessage,
+    'Не удалось загрузить графики',
   ).then((body) => body.data)
 }
 
 export function createSchedule(name: string): Promise<Schedule> {
   return request<ScheduleResponse>(
     '/api/schedules',
-    errorMessage,
+    'Не удалось создать график',
     {
       method: 'POST',
       body: JSON.stringify({ name, address: '' }),
@@ -39,11 +37,13 @@ export function createSchedule(name: string): Promise<Schedule> {
 }
 
 export function fetchSchedule(slug: string): Promise<Schedule> {
-  return request<ScheduleResponse>(`/api/schedules/${slug}`, errorMessage).then((body) => body.data)
+  return request<ScheduleResponse>(`/api/schedules/${slug}`, 'Не удалось открыть график').then(
+    (body) => body.data,
+  )
 }
 
 export function updateScheduleStatus(id: number, status: ScheduleStatus): Promise<Schedule> {
-  return request<ScheduleResponse>(`/api/schedules/${id}`, errorMessage, {
+  return request<ScheduleResponse>(`/api/schedules/${id}`, 'Не удалось сохранить график', {
     method: 'PATCH',
     body: JSON.stringify({ status }),
   }).then((body) => body.data)

@@ -16,7 +16,7 @@ class EmployeeController extends Controller
             'search' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $employees = Employee::query()->orderBy('id')->limit(self::LIST_LIMIT)->get();
+        $employees = Employee::query()->orderBy('id')->get();
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             // SQLite lower()/LIKE не учитывают кириллический регистр — оставляем mb_strtolower.
@@ -25,6 +25,8 @@ class EmployeeController extends Controller
                 fn (Employee $employee) => str_contains(mb_strtolower($employee->name), $needle),
             )->values();
         }
+
+        $employees = $employees->take(self::LIST_LIMIT)->values();
 
         return response()->json([
             'data' => $employees->map(fn (Employee $employee) => [

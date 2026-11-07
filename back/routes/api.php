@@ -14,5 +14,6 @@ Route::get('/schedules/{schedule}', [ScheduleController::class, 'show']);
 Route::patch('/schedules/{schedule}', [ScheduleController::class, 'update']);
 Route::get('/schedules/{schedule}/shifts', [ShiftController::class, 'index']);
 Route::post('/schedules/{schedule}/shifts', [ShiftController::class, 'store']);
+Route::delete('/schedules/{schedule}/shifts', [ShiftController::class, 'destroyMany']);
 Route::patch('/shifts/{shift}', [ShiftController::class, 'update']);
 Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy']);

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -34,6 +35,58 @@ class ScheduleListTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(1, 'data');
         $response->assertJsonPath('data.0.name', 'ТЦ Метрополис');
+    }
+
+    public function test_schedule_search_runs_before_the_list_limit(): void
+    {
+        for ($index = 1; $index <= 100; $index++) {
+            Schedule::query()->create([
+                'name' => 'Пустой',
+                'address' => '',
+                'status' => 'draft',
+                'progress' => 0,
+                'employees_count' => 0,
+                'on_date' => '2026-01-01',
+            ]);
+        }
+
+        Schedule::query()->create([
+            'name' => 'Редкая точка',
+            'address' => '',
+            'status' => 'draft',
+            'progress' => 0,
+            'employees_count' => 0,
+            'on_date' => '2026-12-01',
+        ]);
+
+        $this->getJson('/api/schedules?search=редкая')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Редкая точка');
+    }
+
+    public function test_employee_search_runs_before_the_list_limit(): void
+    {
+        for ($index = 1; $index <= 100; $index++) {
+            Employee::query()->create([
+                'name' => 'Сотрудник '.$index,
+                'role' => 'агент',
+                'weekly_hours' => 24,
+                'avatar' => '',
+            ]);
+        }
+
+        Employee::query()->create([
+            'name' => 'Последний Якорь',
+            'role' => 'агент',
+            'weekly_hours' => 24,
+            'avatar' => '',
+        ]);
+
+        $this->getJson('/api/employees?search=якорь')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Последний Якорь');
     }
 
     public function test_new_schedule_is_a_draft_so_the_list_can_place_it_in_that_group(): void

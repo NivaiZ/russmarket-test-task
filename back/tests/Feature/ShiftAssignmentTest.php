@@ -95,4 +95,67 @@ class ShiftAssignmentTest extends TestCase
             'ends_at' => '15:00',
         ])->assertUnprocessable();
     }
+
+    public function test_progress_counts_a_shift_outside_the_anchor_month(): void
+    {
+        $schedule = Schedule::query()->create([
+            'name' => 'ТЦ Метрополис',
+            'address' => 'Ходынский б-р, 4',
+            'status' => 'draft',
+            'progress' => 91,
+            'employees_count' => 1,
+            'on_date' => '2026-11-02',
+        ]);
+        $employee = Employee::query()->create([
+            'name' => 'Кузнецова Алина',
+            'role' => 'агент',
+            'weekly_hours' => 24,
+            'avatar' => '/avatars/alina.png',
+        ]);
+
+        $this->postJson("/api/schedules/{$schedule->id}/shifts", [
+            'employee_id' => $employee->id,
+            'on_date' => '2026-12-01',
+            'starts_at' => '07:00',
+            'ends_at' => '15:00',
+        ])->assertCreated();
+
+        $schedule->refresh();
+        $this->assertSame(2, $schedule->progress);
+    }
+
+    public function test_selected_shifts_are_cleared_in_one_request(): void
+    {
+        $schedule = Schedule::query()->create([
+            'name' => 'ТЦ Метрополис',
+            'address' => 'Ходынский б-р, 4',
+            'status' => 'draft',
+            'progress' => 0,
+            'employees_count' => 0,
+            'on_date' => '2026-11-02',
+        ]);
+        $employee = Employee::query()->create([
+            'name' => 'Кузнецова Алина',
+            'role' => 'агент',
+            'weekly_hours' => 24,
+            'avatar' => '/avatars/alina.png',
+        ]);
+
+        $created = $this->postJson("/api/schedules/{$schedule->id}/shifts", [
+            'cells' => [
+                ['employee_id' => $employee->id, 'on_date' => '2026-11-02'],
+                ['employee_id' => $employee->id, 'on_date' => '2026-11-03'],
+            ],
+            'starts_at' => '07:00',
+            'ends_at' => '15:00',
+        ])->assertCreated()->json('data');
+
+        $this->deleteJson("/api/schedules/{$schedule->id}/shifts", [
+            'ids' => [$created[0]['id'], $created[1]['id']],
+        ])->assertOk();
+
+        $this->assertDatabaseCount('shifts', 0);
+        $schedule->refresh();
+        $this->assertSame(0, $schedule->progress);
+    }
 }

@@ -7,6 +7,7 @@ use App\Models\Shift;
 use App\Models\ShiftTemplate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ShiftController extends Controller
@@ -46,27 +47,65 @@ class ShiftController extends Controller
             'employee_id' => $data['employee_id'],
             'on_date' => $data['on_date'],
         ]];
+        $template = isset($data['template_id'])
+            ? ShiftTemplate::query()->find($data['template_id'])
+            : null;
 
-        $created = [];
-        foreach ($cells as $cell) {
-            $shift = Shift::query()->updateOrCreate(
-                [
-                    'schedule_id' => $schedule->id,
-                    'employee_id' => $cell['employee_id'],
-                    'on_date' => $cell['on_date'],
-                ],
-                [
-                    'starts_at' => $data['starts_at'],
-                    'ends_at' => $data['ends_at'],
-                    'template_id' => $data['template_id'] ?? null,
-                ],
-            );
-            $created[] = $this->payload($shift->load('template'));
-        }
+        $created = DB::transaction(function () use ($schedule, $cells, $data, $template) {
+            $rows = [];
+            foreach ($cells as $cell) {
+                $shift = Shift::query()->updateOrCreate(
+                    [
+                        'schedule_id' => $schedule->id,
+                        'employee_id' => $cell['employee_id'],
+                        'on_date' => $cell['on_date'],
+                    ],
+                    [
+                        'starts_at' => $data['starts_at'],
+                        'ends_at' => $data['ends_at'],
+                        'template_id' => $data['template_id'] ?? null,
+                    ],
+                );
+                $shift->setRelation('template', $template);
+                $rows[] = $this->payload($shift);
+            }
 
-        $schedule->refreshProgress();
+            $schedule->refreshProgress();
+
+            return $rows;
+        });
 
         return response()->json(['data' => $created], 201);
+    }
+
+    public function destroyMany(Request $request, Schedule $schedule): JsonResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:248'],
+            'ids.*' => ['integer', 'distinct'],
+        ]);
+
+        $deleted = DB::transaction(function () use ($schedule, $data) {
+            $ids = $schedule->shifts()->whereIn('id', $data['ids'])->pluck('id');
+            if ($ids->isEmpty()) {
+                return $ids;
+            }
+
+            Shift::query()->whereIn('id', $ids)->delete();
+            $schedule->refreshProgress();
+
+            return $ids;
+        });
+
+        if ($deleted->isEmpty()) {
+            throw ValidationException::withMessages([
+                'ids' => 'Смены не найдены.',
+            ]);
+        }
+
+        return response()->json([
+            'data' => ['deleted' => $deleted->values()->all()],
+        ]);
     }
 
     public function update(Request $request, Shift $shift): JsonResponse

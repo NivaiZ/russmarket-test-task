@@ -114,6 +114,8 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    'basic_disabled' => filter_var(env('BASIC_AUTH_DISABLED', false), FILTER_VALIDATE_BOOLEAN),
+
     'basic_email' => env('BASIC_AUTH_EMAIL'),
 
     'basic_password' => env('BASIC_AUTH_PASSWORD'),
