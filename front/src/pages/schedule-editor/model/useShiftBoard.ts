@@ -396,8 +396,10 @@ export function useShiftBoard() {
 
   watch(
     () => route.params.slug,
-    () => {
-      void loadBoard()
+    (slug) => {
+      if (typeof slug === 'string' && slug !== '') {
+        void loadBoard()
+      }
     },
   )
 

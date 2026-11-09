@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import Sheet from '@/shared/ui/Sheet.vue'
+import Sheet from '@/shared/ui/AppSheet.vue'
 import type { Shift, ShiftTemplate } from '../model/types'
 import ShiftPanel from './ShiftPanel.vue'
 

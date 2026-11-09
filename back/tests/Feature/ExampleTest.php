@@ -23,17 +23,17 @@ class ExampleTest extends TestCase
     {
         config([
             'auth.basic_disabled' => false,
-            'auth.basic_email' => 'ilya-94',
+            'auth.basic_email' => 'admin',
             'auth.basic_password' => 'secret-password',
         ]);
 
         $this->get('/')->assertUnauthorized();
 
-        $this->withBasicAuth('ilya-94', 'wrong')
+        $this->withBasicAuth('admin', 'wrong')
             ->get('/')
             ->assertUnauthorized();
 
-        $this->withBasicAuth('ilya-94', 'secret-password')
+        $this->withBasicAuth('admin', 'secret-password')
             ->get('/')
             ->assertOk();
     }

@@ -44,125 +44,125 @@ const {
 
 <template>
   <div class="page">
-      <header class="heading">
-        <div>
-          <RouterLink class="back" to="/schedules">
-            <img :src="chevronLeftIcon" alt="" width="24" height="24" />
-            Графики смен
-          </RouterLink>
-          <h1>{{ schedule?.name ?? 'График' }}</h1>
-        </div>
-        <div class="actions">
-          <button class="publish" type="button" :disabled="saving || loading" @click="setStatus('published')">
-            Опубликовать
-          </button>
-          <button class="save" type="button" :disabled="saving || loading" @click="setStatus('draft')">
-            Сохранить
-          </button>
-        </div>
-      </header>
-      <p v-if="schedule" class="status">
-        {{ schedule.status === 'published' ? 'Опубликован' : 'Черновик' }}
-      </p>
-
-      <div class="workspace">
-        <section class="board">
-          <SelectionBar
-            v-if="selected.length > 0"
-            v-model:template-menu="templateMenu"
-            :selected="selected"
-            :templates="templates"
-            :phone="isPhone"
-            @apply="applyTemplate"
-            @open-panel="panelOpen = true"
-            @clear="clearSelected"
-            @dismiss="dismissSelection"
-          />
-          <BoardToolbar
-            v-else
-            v-model:search="search"
-            :period="period"
-            :loading="loading"
-            :mode="mode"
-            :phone="isPhone"
-            @move="movePeriod"
-            @mode="mode = $event"
-            @open-panel="panelOpen = true"
-          />
-
-          <div v-if="dayMenu && !isPhone" class="day-menu">
-            <p>Назначить на {{ dayMenu }}</p>
-            <button
-              v-for="template in templates"
-              :key="template.id"
-              type="button"
-              @click="assignDay(template)"
-            >
-              {{ template.name }}
-            </button>
-          </div>
-
-          <div v-if="loading" class="skeleton-grid" aria-hidden="true">
-            <div v-for="row in 6" :key="row" class="skeleton-row">
-              <span class="skeleton person"></span>
-              <span v-for="day in 7" :key="day" class="skeleton cell"></span>
-            </div>
-          </div>
-          <div
-            v-else-if="search.trim() !== '' && visibleEmployees.length === 0"
-            class="empty-search"
-            role="status"
-          >
-            <strong>Ничего не найдено</strong>
-            <span>Измените запрос и повторите поиск</span>
-          </div>
-          <ShiftGrid
-            v-else
-            :employees="visibleEmployees"
-            :days="days"
-            :shifts="shifts"
-            :selected="selected"
-            :mode="mode"
-            :drag-over-key="dragOverKey"
-            @toggle-cell="toggleCell"
-            @open-shift="openShift"
-            @open-day="dayMenu = dayMenu === $event ? '' : $event"
-            @drop="onDrop"
-            @drag-over="dragOverKey = $event"
-          />
-        </section>
-
-        <EditorShiftPanel
-          v-model:open="panelOpen"
-          :phone="isPhone"
-          :loading="loading"
-          :templates="templates"
-          :selected-count="selected.length"
-          :editing="editing"
-          :custom-start="customStart"
-          :custom-end="customEnd"
-          @apply-template="applyTemplate"
-          @apply-custom="applyCustom"
-          @custom-start="customStart = $event"
-          @custom-end="customEnd = $event"
-          @edit-start="editing && (editing.starts_at = $event)"
-          @edit-end="editing && (editing.ends_at = $event)"
-          @save-edit="saveEdit"
-          @delete-edit="removeEdit"
-        />
+    <header class="heading">
+      <div>
+        <RouterLink class="back" to="/schedules">
+          <img :src="chevronLeftIcon" alt="" width="24" height="24" />
+          Графики смен
+        </RouterLink>
+        <h1>{{ schedule?.name ?? 'График' }}</h1>
       </div>
+      <div class="actions">
+        <button class="publish" type="button" :disabled="saving || loading" @click="setStatus('published')">
+          Опубликовать
+        </button>
+        <button class="save" type="button" :disabled="saving || loading" @click="setStatus('draft')">
+          Сохранить
+        </button>
+      </div>
+    </header>
+    <p v-if="schedule" class="status">
+      {{ schedule.status === 'published' ? 'Опубликован' : 'Черновик' }}
+    </p>
 
-      <Sheet v-if="isPhone" :model-value="dayMenu !== ''" @update:model-value="onDaySheet">
-        <template #header>Назначить на {{ dayMenu }}</template>
-        <ul class="sheet-options">
-          <li v-for="template in templates" :key="template.id">
-            <button type="button" @click="assignDay(template)">
-              {{ template.name }}
-            </button>
-          </li>
-        </ul>
-      </Sheet>
+    <div class="workspace">
+      <section class="board">
+        <SelectionBar
+          v-if="selected.length > 0"
+          v-model:template-menu="templateMenu"
+          :selected="selected"
+          :templates="templates"
+          :phone="isPhone"
+          @apply="applyTemplate"
+          @open-panel="panelOpen = true"
+          @clear="clearSelected"
+          @dismiss="dismissSelection"
+        />
+        <BoardToolbar
+          v-else
+          v-model:search="search"
+          :period="period"
+          :loading="loading"
+          :mode="mode"
+          :phone="isPhone"
+          @move="movePeriod"
+          @mode="mode = $event"
+          @open-panel="panelOpen = true"
+        />
+
+        <div v-if="dayMenu && !isPhone" class="day-menu">
+          <p>Назначить на {{ dayMenu }}</p>
+          <button
+            v-for="template in templates"
+            :key="template.id"
+            type="button"
+            @click="assignDay(template)"
+          >
+            {{ template.name }}
+          </button>
+        </div>
+
+        <div v-if="loading" class="skeleton-grid" aria-hidden="true">
+          <div v-for="row in 6" :key="row" class="skeleton-row">
+            <span class="skeleton person"></span>
+            <span v-for="day in 7" :key="day" class="skeleton cell"></span>
+          </div>
+        </div>
+        <div
+          v-else-if="search.trim() !== '' && visibleEmployees.length === 0"
+          class="empty-search"
+          role="status"
+        >
+          <strong>Ничего не найдено</strong>
+          <span>Измените запрос и повторите поиск</span>
+        </div>
+        <ShiftGrid
+          v-else
+          :employees="visibleEmployees"
+          :days="days"
+          :shifts="shifts"
+          :selected="selected"
+          :mode="mode"
+          :drag-over-key="dragOverKey"
+          @toggle-cell="toggleCell"
+          @open-shift="openShift"
+          @open-day="dayMenu = dayMenu === $event ? '' : $event"
+          @drop="onDrop"
+          @drag-over="dragOverKey = $event"
+        />
+      </section>
+
+      <EditorShiftPanel
+        v-model:open="panelOpen"
+        :phone="isPhone"
+        :loading="loading"
+        :templates="templates"
+        :selected-count="selected.length"
+        :editing="editing"
+        :custom-start="customStart"
+        :custom-end="customEnd"
+        @apply-template="applyTemplate"
+        @apply-custom="applyCustom"
+        @custom-start="customStart = $event"
+        @custom-end="customEnd = $event"
+        @edit-start="editing && (editing.starts_at = $event)"
+        @edit-end="editing && (editing.ends_at = $event)"
+        @save-edit="saveEdit"
+        @delete-edit="removeEdit"
+      />
     </div>
+
+    <Sheet v-if="isPhone" :model-value="dayMenu !== ''" @update:model-value="onDaySheet">
+      <template #header>Назначить на {{ dayMenu }}</template>
+      <ul class="sheet-options">
+        <li v-for="template in templates" :key="template.id">
+          <button type="button" @click="assignDay(template)">
+            {{ template.name }}
+          </button>
+        </li>
+      </ul>
+    </Sheet>
+  </div>
 </template>
 
 <style scoped>

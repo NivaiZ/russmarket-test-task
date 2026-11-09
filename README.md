@@ -25,6 +25,7 @@ npm run dev
 cd back
 composer install
 cp .env.example .env
+# для локального запуска откройте back/.env и поставьте BASIC_AUTH_DISABLED=true, иначе API ответит 401
 php artisan key:generate
 php artisan migrate --seed
 npm run dev
